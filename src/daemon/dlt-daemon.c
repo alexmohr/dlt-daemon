@@ -1374,7 +1374,8 @@ static int dlt_mkdir_recursive(const char *dir)
         if (*p == '/') {
             *p = 0;
 
-            if (access(tmp, F_OK) != 0 && errno == ENOENT) {
+            struct stat s;
+            if (stat(tmp, &s) == 0 && !S_ISDIR(s.st_mode)) {
                 ret = mkdir(tmp,
                 #ifdef DLT_DAEMON_USE_FIFO_IPC
                                 S_IRWXU);
