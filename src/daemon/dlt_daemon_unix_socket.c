@@ -168,6 +168,21 @@ int dlt_daemon_unix_socket_open(int *sock, char *sock_path, int type, int mask)
 #endif
 
 
+    /* get the current buffer size */
+    int rcv_buf_len = 0;
+    socklen_t socklen = sizeof(rcv_buf_len);
+    getsockopt(*sock, SOL_SOCKET, SO_RCVBUF, (void *)&rcv_buf_len, &socklen);
+
+    /* double the current size, as this is the maximum the OS will allow us to set */
+    const int sockbuffer = rcv_buf_len * 2;
+    if (setsockopt(*sock, SOL_SOCKET, SO_RCVBUF, &sockbuffer, sizeof(sockbuffer)) < 0) {
+        /* on failure: continue with the old values */
+        dlt_vlog(LOG_WARNING, "[%s:%d] Setsockopt error %s\n", __func__, __LINE__, strerror(errno));
+    }
+
+    getsockopt(*sock, SOL_SOCKET, SO_RCVBUF, (void *)&rcv_buf_len, &socklen);
+    dlt_vlog(LOG_INFO, "[%s:%d] Socket recv queue size: %d\n", __func__, __LINE__, rcv_buf_len);
+
     return 0;
 }
 
